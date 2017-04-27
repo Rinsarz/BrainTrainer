@@ -4,36 +4,27 @@ import android.graphics.Color;
 import android.os.CountDownTimer;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.TextView;
-import android.widget.Toast;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
 
-    Button startBtn;
-    Button restartBtn;
-    CountDownTimer timer;
-    TextView timerView;
-    TextView taskview;
-    TextView [] answers;
-    TextView scoreView;
-    TextView statusView;
+    GameSettings gameSettings = new GameSettings();
+    InterfaceManager interfaceManager = new InterfaceManager(this);
 
-    TextView [] errs;
-    ImageView [] helpViews;
 
-    int maxTimesec = 30;
     int answer;
     int correctAns;
     int errors;
     int totalAns;
-    ArrayList <Integer> colors;
+    CountDownTimer timer;
+
 
     boolean isTimerActive;
 
@@ -41,64 +32,34 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         init();
-
-
     }
-    public void init(){
-        startBtn  = (Button)findViewById(R.id.startBtn);
-        startBtn.setVisibility(View.VISIBLE);
 
-        restartBtn  = (Button)findViewById(R.id.restartBtn);
-        restartBtn.setVisibility(View.INVISIBLE);
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater menuInflater = getMenuInflater();
+        menuInflater.inflate(R.menu.main_menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
 
-        timerView = (TextView)findViewById(R.id.timerView);
-        timerView.setText("30");
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        super.onOptionsItemSelected(item);
 
-        taskview = (TextView)findViewById(R.id.taskView);
-        taskview.setText("");
-
-        scoreView = (TextView)findViewById(R.id.scoreView);
-        scoreView.setText("0/30");
-
-        statusView = (TextView)findViewById(R.id.statusView);
-        statusView.setText("");
-
-        helpViews = new ImageView[2];
-        helpViews[0] = (ImageView)findViewById(R.id.helpView1);
-        helpViews[1] = (ImageView)findViewById(R.id.helpView2);
-
-        for (int i = 0; i < 2; i++){
-            helpViews[i].setVisibility(View.VISIBLE);
-            helpViews[i].setAlpha(0.5f);
+        switch (item.getItemId()){
+            case R.id.settings:
+                Log.i("Menu item selected", "Settings");
+                return true;
+            case R.id.help:
+                Log.i("Menu item selected", "Help");
+                return true;
+            default:
+                return false;
         }
+    }
 
-        answers = new TextView[4];
-        answers[0] = (TextView)findViewById(R.id.ans1);
-        answers[1] = (TextView)findViewById(R.id.ans2);
-        answers[2] = (TextView)findViewById(R.id.ans3);
-        answers[3] = (TextView)findViewById(R.id.ans4);
-
-        errs = new TextView[3];
-        errs[0] = (TextView)findViewById(R.id.err1);
-        errs[1] = (TextView)findViewById(R.id.err2);
-        errs[2] = (TextView)findViewById(R.id.err3);
-
-        fullErrsView();
-
-
-        colors = new ArrayList();
-        colors.add(Color.parseColor("#ff669900"));
-        colors.add(Color.parseColor("#ff0099cc"));
-        colors.add(Color.parseColor("#ffff8800"));
-        colors.add(Color.parseColor("#ffaa66cc"));
-
-
-
-
-
-
+    public void init(){
+        interfaceManager.initializeInterface();
         isTimerActive = false;
     }
 
@@ -109,11 +70,11 @@ public class MainActivity extends AppCompatActivity {
 
     public void start(View view){
         init();
-        startBtn.setVisibility(View.INVISIBLE);
-        restartBtn.setVisibility(View.VISIBLE);
+        interfaceManager.startBtn.setVisibility(View.INVISIBLE);
+        interfaceManager.restartBtn.setVisibility(View.VISIBLE);
 
         for (int i = 0; i < 2; i++){
-            helpViews[i].setVisibility(View.INVISIBLE);
+            interfaceManager.helpViews[i].setVisibility(View.INVISIBLE);
         }
 
 
@@ -122,10 +83,10 @@ public class MainActivity extends AppCompatActivity {
         errors = 0;
         isTimerActive = true;
 
-        timer = new CountDownTimer((maxTimesec + 1)*1000, 1000) {
+        timer = new CountDownTimer((gameSettings.MAX_TIMER + 1)*1000, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
-                timerView.setText(Integer.toString((int)millisUntilFinished/1000));
+                interfaceManager.timerView.setText(Integer.toString((int)millisUntilFinished/1000));
             }
 
             @Override
@@ -137,96 +98,61 @@ public class MainActivity extends AppCompatActivity {
         makeQuestion();
     }
 
-    public void fullErrsView(){
-        for (int i = 0; i < 3; i++){
-            errs[i].setBackgroundColor(Color.parseColor("#ff669900"));
-        }
-    }
-
     public void stopGame(){
         isTimerActive = false;
-        startBtn.setVisibility(View.VISIBLE);
-        restartBtn.setVisibility(View.INVISIBLE);
-        timerView.setText("00");
-        taskview.setText(" ");
+        GameSettings.GAME_OVER_STATUS status = GameSettings.GAME_OVER_STATUS.BAD;
 
-        if(correctAns > 29){
-            statusView.setText("Excellent!");
-            statusView.setTextColor(Color.parseColor("#ff669900"));
-        } else if(correctAns > 25){
-            Toast.makeText(MainActivity.this, "You are trained!", Toast.LENGTH_SHORT).show();
-            statusView.setText("Good!");
-            statusView.setTextColor(Color.parseColor("#ff669900"));
-        }else if(correctAns > 15){
-            statusView.setText("Average!");
-            statusView.setTextColor(Color.parseColor("#ff669900"));
-        } else if(errors == 3 || correctAns <= 15){
-            Toast.makeText(MainActivity.this, "You have failed!", Toast.LENGTH_SHORT).show();
-            statusView.setText("Bad!");
-            statusView.setTextColor(Color.RED);
+        if(correctAns >= gameSettings.EXCELLENT_SCORE){
+            status = GameSettings.GAME_OVER_STATUS.EXCELLENT;
+        } else if(correctAns > gameSettings.GOOD_SCORE){
+            status = GameSettings.GAME_OVER_STATUS.GOOD;
+        }else if(correctAns > gameSettings.MIN_SCORE){
+            status = GameSettings.GAME_OVER_STATUS.AVERAGE;
+        } else if(errors == gameSettings.MAX_ERROR_NUMBER || correctAns <= gameSettings.MIN_SCORE){
+            status = GameSettings.GAME_OVER_STATUS.BAD;
         }
-    }
-
-    public void changeStatus(){
-
+        interfaceManager.stopGame(status);
     }
 
     public void check(View view){
         if(!isTimerActive){
             return;
         }
-        int ans = Integer.parseInt(((TextView)view).getText().toString());
+        int ans = interfaceManager.parseAnswer(view);
         if (ans == answer){
             correctAns+=1;
         }else{
-            errs[errors].setBackgroundColor(Color.RED);
+            interfaceManager.errs[errors].setBackgroundColor(Color.RED);
             errors++;
-            if (errors > 2){
+            if (errors >= gameSettings.MAX_ERROR_NUMBER){
                 timer.cancel();
                 stopGame();
             }
         }
-        totalAns+=1;
+        totalAns += 1;
 
-        updateScoreView();
+        interfaceManager.updateScoreView(correctAns, totalAns);
         makeQuestion();
-    }
-
-    public void updateScoreView(){
-        scoreView.setText(correctAns + "/" + totalAns);
     }
 
     public void makeQuestion (){
         Random rnd=  new Random();
-        int first = rnd.nextInt(20)+2;
-        int second = rnd.nextInt(20) + 2;
+        int first   = rnd.nextInt(gameSettings.FIRST_NUMBER_MAX) + 1;
+        int second  = rnd.nextInt(gameSettings.SECOND_NUMBER_MAX) + 1;
 
         answer = first + second;
 
-        List answersList = new ArrayList();
+        List <Integer> answersList = new ArrayList<>();
         answersList.add(answer);
-        int next = 1;
-
-        while(answersList.size() < 4){
+        int next;
+        while(answersList.size() < gameSettings.MAX_ANSWERS_NUMBER){
             next = rnd.nextInt(answer)+1;
             if (!answersList.contains(next)) {
                 answersList.add(next);
             }
         }
 
-
-        Collections.shuffle(answersList);
-        Collections.shuffle(colors);
-
-        for (int i = 0; i < 4; i++){
-            answers[i].setText(answersList.get(i).toString());
-            answers[i].setBackgroundColor(colors.get(i));
-        }
-
-
-        taskview.setText(first + " + " + second);
-
-
+        interfaceManager.askQuestion(answersList, first, second);
 
     }
 }

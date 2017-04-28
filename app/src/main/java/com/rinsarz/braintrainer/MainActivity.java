@@ -1,7 +1,12 @@
 package com.rinsarz.braintrainer;
 
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.CountDownTimer;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -9,7 +14,11 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Random;
 
@@ -32,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         init();
+        loadRecords();
     }
 
     @Override
@@ -42,16 +52,38 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onBackPressed() {
+        new AlertDialog.Builder(this)
+                .setIcon(android.R.drawable.ic_menu_close_clear_cancel)
+                .setTitle("Close app?")
+                .setMessage("Do you want to quit?")
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        finish();
+                        System.exit(0);
+                    }
+                })
+                .setNegativeButton("No", null)
+                .show();
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         super.onOptionsItemSelected(item);
 
         switch (item.getItemId()){
             case R.id.settings:
                 Log.i("Menu item selected", "Settings");
+                Intent intent = new Intent(getApplicationContext(), GameSettingActivity.class);
+                startActivity(intent);
                 return true;
             case R.id.help:
                 Log.i("Menu item selected", "Help");
                 return true;
+            case R.id.records:
+                Intent intent1 = new Intent(getApplicationContext(), RecordsActivity.class);
+                startActivity(intent1);
             default:
                 return false;
         }
@@ -60,6 +92,16 @@ public class MainActivity extends AppCompatActivity {
     public void init(){
         interfaceManager.initializeInterface();
         isTimerActive = false;
+    }
+
+    public void loadRecords(){
+        SharedPreferences sharedPreferences =
+                this.getSharedPreferences("com.rinsarz.braintrainer", Context.MODE_PRIVATE);
+        try {
+            GameSettings.RECORDS = (ArrayList<Record> )ObjectSerializer.deserialize(sharedPreferences.getString("records", ObjectSerializer.serialize(new ArrayList<Record>())));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void restart(View view){
@@ -98,6 +140,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void stopGame(){
+        saveRecord();
+
         isTimerActive = false;
         GameSettings.GAME_OVER_STATUS status = GameSettings.GAME_OVER_STATUS.BAD;
 
@@ -113,6 +157,19 @@ public class MainActivity extends AppCompatActivity {
         interfaceManager.stopGame(status);
 
         Log.i("GAME STATUS", "Game stopped");
+    }
+
+    public void saveRecord(){
+        Date date = new Date();
+        GameSettings.RECORDS.add(new Record(date, correctAns, errors));
+        //Save records
+        SharedPreferences sharedPreferences =
+                this.getSharedPreferences("com.rinsarz.braintrainer", Context.MODE_PRIVATE);
+        try {
+            sharedPreferences.edit().putString("records", ObjectSerializer.serialize(GameSettings.RECORDS)).apply();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void check(View view){

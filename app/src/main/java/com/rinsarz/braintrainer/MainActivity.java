@@ -15,7 +15,6 @@ import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
 
-    GameSettings gameSettings = new GameSettings();
     InterfaceManager interfaceManager = new InterfaceManager(this);
 
 
@@ -83,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
         errors = 0;
         isTimerActive = true;
 
-        timer = new CountDownTimer((gameSettings.MAX_TIMER + 1)*1000, 1000) {
+        timer = new CountDownTimer((GameSettings.MAX_TIMER + 1)*1000, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
                 interfaceManager.timerView.setText(Integer.toString((int)millisUntilFinished/1000));
@@ -102,19 +101,22 @@ public class MainActivity extends AppCompatActivity {
         isTimerActive = false;
         GameSettings.GAME_OVER_STATUS status = GameSettings.GAME_OVER_STATUS.BAD;
 
-        if(correctAns >= gameSettings.EXCELLENT_SCORE){
+        if(correctAns >= GameSettings.EXCELLENT_SCORE){
             status = GameSettings.GAME_OVER_STATUS.EXCELLENT;
-        } else if(correctAns > gameSettings.GOOD_SCORE){
+        } else if(correctAns > GameSettings.GOOD_SCORE){
             status = GameSettings.GAME_OVER_STATUS.GOOD;
-        }else if(correctAns > gameSettings.MIN_SCORE){
+        }else if(correctAns > GameSettings.MIN_SCORE){
             status = GameSettings.GAME_OVER_STATUS.AVERAGE;
-        } else if(errors == gameSettings.MAX_ERROR_NUMBER || correctAns <= gameSettings.MIN_SCORE){
+        } else if(errors == GameSettings.MAX_ERROR_NUMBER || correctAns <= GameSettings.MIN_SCORE){
             status = GameSettings.GAME_OVER_STATUS.BAD;
         }
         interfaceManager.stopGame(status);
+
+        Log.i("GAME STATUS", "Game stopped");
     }
 
     public void check(View view){
+        Log.i("GAME STATUS", "Check started");
         if(!isTimerActive){
             return;
         }
@@ -124,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
         }else{
             interfaceManager.errs[errors].setBackgroundColor(Color.RED);
             errors++;
-            if (errors >= gameSettings.MAX_ERROR_NUMBER){
+            if (errors >= GameSettings.MAX_ERROR_NUMBER){
                 timer.cancel();
                 stopGame();
             }
@@ -132,27 +134,45 @@ public class MainActivity extends AppCompatActivity {
         totalAns += 1;
 
         interfaceManager.updateScoreView(correctAns, totalAns);
+
+        Log.i("GAME STATUS", "Check completed");
         makeQuestion();
     }
 
     public void makeQuestion (){
+        Log.i("GAME STATUS", "Make question started");
         Random rnd=  new Random();
-        int first   = rnd.nextInt(gameSettings.FIRST_NUMBER_MAX) + 1;
-        int second  = rnd.nextInt(gameSettings.SECOND_NUMBER_MAX) + 1;
+        int first   = rnd.nextInt(GameSettings.FIRST_NUMBER_MAX) + 1;
+        int second  = rnd.nextInt(GameSettings.SECOND_NUMBER_MAX) + 1;
 
         answer = first + second;
-
         List <Integer> answersList = new ArrayList<>();
         answersList.add(answer);
         int next;
-        while(answersList.size() < gameSettings.MAX_ANSWERS_NUMBER){
-            next = rnd.nextInt(answer)+1;
+        int random_offset = 0;
+        if (answer < 10){
+            random_offset = 5;
+        }
+        while(answersList.size() < GameSettings.MAX_ANSWERS_NUMBER){
+            next = rnd.nextInt(answer + random_offset)+1;
+
+            /*
+            while(answersList.contains(next) && next < (GameSettings.FIRST_NUMBER_MAX + GameSettings.SECOND_NUMBER_MAX)){
+                next+=1;
+            }
+            answersList.add(next);
+            */
+
             if (!answersList.contains(next)) {
                 answersList.add(next);
             }
+
         }
+        Log.i("GAME STATUS", "Question list formed");
+
 
         interfaceManager.askQuestion(answersList, first, second);
+        Log.i("GAME STATUS", "Make question finished");
 
     }
 }

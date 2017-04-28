@@ -1,7 +1,6 @@
 package com.rinsarz.braintrainer;
 
 import android.graphics.Color;
-import android.os.CountDownTimer;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -17,7 +16,7 @@ import java.util.List;
  */
 
 public class InterfaceManager {
-    public InterfaceManager(MainActivity mainActivity) {
+    InterfaceManager(MainActivity mainActivity) {
         this.mainActivity = mainActivity;
 
         colors.add(Color.parseColor("#ff669900"));
@@ -26,20 +25,19 @@ public class InterfaceManager {
         colors.add(Color.parseColor("#ffaa66cc"));
     }
 
-    protected Button startBtn;
-    protected Button restartBtn;
-    protected TextView timerView;
-    protected TextView taskview;
-    protected TextView [] answers;
-    protected TextView scoreView;
-    protected TextView statusView;
-    protected MainActivity mainActivity;
+    Button startBtn;
+    Button restartBtn;
+    TextView timerView;
+    TextView taskview;
+    TextView [] answers;
+    TextView scoreView;
+    TextView statusView;
+    MainActivity mainActivity;
 
-    protected TextView [] errs;
-    protected ImageView[] helpViews;
+    TextView [] errs;
+    ImageView[] helpViews;
 
-    protected GameSettings gameSettings = new GameSettings();
-    protected ArrayList<Integer> colors = new ArrayList();
+    ArrayList<Integer> colors = new ArrayList();
 
 
 
@@ -73,13 +71,13 @@ public class InterfaceManager {
             helpViews[i].setAlpha(0.5f);
         }
 
-        answers = new TextView[gameSettings.MAX_ANSWERS_NUMBER];
+        answers = new TextView[GameSettings.MAX_ANSWERS_NUMBER];
         answers[0] = (TextView)mainActivity.findViewById(R.id.ans1);
         answers[1] = (TextView)mainActivity.findViewById(R.id.ans2);
         answers[2] = (TextView)mainActivity.findViewById(R.id.ans3);
         answers[3] = (TextView)mainActivity.findViewById(R.id.ans4);
 
-        errs = new TextView[gameSettings.MAX_ERROR_NUMBER];
+        errs = new TextView[GameSettings.MAX_ERROR_NUMBER];
         errs[0] = (TextView)mainActivity.findViewById(R.id.err1);
         errs[1] = (TextView)mainActivity.findViewById(R.id.err2);
         errs[2] = (TextView)mainActivity.findViewById(R.id.err3);
@@ -123,7 +121,7 @@ public class InterfaceManager {
         Collections.shuffle(colors);
 
 
-        for (int i = 0; i < gameSettings.MAX_ANSWERS_NUMBER; i++){
+        for (int i = 0; i < GameSettings.MAX_ANSWERS_NUMBER; i++){
             answers[i].setText(answersList.get(i).toString());
             answers[i].setBackgroundColor(colors.get(i));
         }
